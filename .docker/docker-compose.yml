@@ -1,52 +1,77 @@
 version: "3"
 
 services:
-    mysql:
-        container_name: mysql
-        image: mysql:8.0.33
-        platform: linux/x86_64
-        command: --default-authentication-plugin=mysql_native_password
-        volumes:
-            - "mysql_data:/var/lib/mysql"
-        environment:
-            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-            MYSQL_DATABASE: ${MYSQL_DATABASE}
-            MYSQL_USER: ${MYSQL_USER}
-            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-        ports:
-            - 3306:3306
-        networks:
-            - real_estate_finder
-    php:
-        container_name: php
-        build:
-            context: ./php
-            args:
-                TIMEZONE: ${TIMEZONE}
-        volumes:
-            - ../:/var/www/symfony
-        networks:
-            - real_estate_finder
-        depends_on:
-            - mysql
-    nginx:
-        container_name: nginx
-        build:
-            context: ./nginx
-        volumes:
-            - ../:/var/www/symfony
-        ports:
-            - 80:80
-        networks:
-            - real_estate_finder
-        env_file:
-            - .env.nginx.local
-        depends_on:
-            - php
-            - mysql
+  mysql:
+    container_name: mysql
+    image: mysql:8.0.33
+    platform: linux/x86_64
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - "mysql_data:/var/lib/mysql"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - 3306:3306
+    networks:
+      - real_estate_finder
+  php:
+    container_name: php
+    build:
+      context: ./php
+      args:
+        TIMEZONE: ${TIMEZONE}
+    volumes:
+      - ../:/var/www/symfony
+    networks:
+      - real_estate_finder
+    depends_on:
+      - mysql
+  es:
+    container_name: es
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.3
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # 512mo HEAP
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.9.3
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    depends_on:
+      - es
+    ports:
+      - 5601:5601
+  nginx:
+    container_name: nginx
+    build:
+      context: ./nginx
+    volumes:
+      - ../:/var/www/symfony
+    ports:
+      - 80:80
+    networks:
+      - real_estate_finder
+    env_file:
+      - .env.nginx.local
+    depends_on:
+      - php
+      - mysql
+      - es
 
 volumes:
-    mysql_data:
+  mysql_data:
 
 networks:
-    real_estate_finder:
+  real_estate_finder:

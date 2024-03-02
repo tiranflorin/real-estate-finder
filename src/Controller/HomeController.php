@@ -2,16 +2,16 @@
 
 namespace App\Controller;
 
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
 class HomeController
 {
     #[Route('/', 'home', methods: ['GET'])]
-    public function number(): Response
+    public function number(): JsonResponse
     {
-        return new Response(
-            '<html><body>Real Estate Finder</body></html>'
+        return new JsonResponse(
+            'Hola!'
         );
     }
 }
